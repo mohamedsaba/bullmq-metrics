@@ -1,4 +1,4 @@
-import { Module, DynamicModule, Global, OnModuleInit, OnModuleDestroy, Provider, Type, Inject } from '@nestjs/common';
+import { Module, DynamicModule, Global, OnModuleInit, OnModuleDestroy, Inject } from '@nestjs/common';
 import { DiscoveryModule, DiscoveryService } from '@nestjs/core';
 import { Queue, Worker } from 'bullmq';
 import { MetricsRegistry } from '../core/metrics.registry';
@@ -53,7 +53,9 @@ export class BullMQMetricsModule implements OnModuleInit, OnModuleDestroy {
   }): DynamicModule {
     return {
       module: BullMQMetricsModule,
-      imports: options.imports || [],
+      // Always include DiscoveryModule — it is required for auto-discovery.
+      // Spread user-provided imports alongside it to avoid dropping either.
+      imports: [DiscoveryModule, ...(options.imports || [])],
       providers: [
         {
           provide: BULLMQ_METRICS_OPTIONS,
@@ -92,7 +94,7 @@ export class BullMQMetricsModule implements OnModuleInit, OnModuleDestroy {
     const providers = this.discoveryService.getProviders();
     
     providers.forEach((wrapper) => {
-      const { instance, name } = wrapper;
+      const { instance } = wrapper;
       if (!instance) return;
 
       // Check if it's a Queue

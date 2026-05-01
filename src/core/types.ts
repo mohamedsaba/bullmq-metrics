@@ -49,6 +49,28 @@ export interface BullMQMetricsOptions {
    * Specific queues to exclude from monitoring.
    */
   exclude?: string[];
+
+  /**
+   * Custom buckets for job duration histogram.
+   */
+  durationBuckets?: number[];
+
+  /**
+   * Custom buckets for wait duration histogram.
+   */
+  waitDurationBuckets?: number[];
+
+  /**
+   * Optional callback to extract custom labels from a job.
+   * Note: Use with caution to avoid high cardinality.
+   */
+  getCustomLabels?: (job: any) => Record<string, string>;
+
+  /**
+   * List of custom label keys that will be returned by getCustomLabels.
+   * Required for Prometheus to initialize the metrics with the correct labels.
+   */
+  customLabels?: string[];
 }
 
 export interface MetricLabels {

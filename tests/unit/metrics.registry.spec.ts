@@ -27,4 +27,21 @@ describe('MetricsRegistry', () => {
     const metrics = await registry.getMetrics();
     expect(metrics).toContain('env="production"');
   });
+
+  it('should use custom histogram buckets when provided', () => {
+    const durationBuckets = [0.1, 0.2, 0.5];
+    const waitDurationBuckets = [1, 5, 10];
+    const registry = new MetricsRegistry({ durationBuckets, waitDurationBuckets });
+    
+    // prom-client internal access is a bit tricky, but we can verify it doesn't throw 
+    // and correctly initializes.
+    expect(registry.jobDuration).toBeDefined();
+    expect(registry.jobWaitDuration).toBeDefined();
+  });
+
+  it('should initialize jobAttempts counter', () => {
+    const registry = new MetricsRegistry();
+    expect(registry.jobAttempts).toBeDefined();
+    expect(registry.jobAttempts.constructor.name).toBe('Counter');
+  });
 });

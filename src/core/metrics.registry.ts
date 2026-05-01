@@ -12,6 +12,7 @@ export class MetricsRegistry {
   public readonly jobWaitDuration: Histogram<string>;
   public readonly workersActive: Gauge<string>;
   public readonly queuePaused: Gauge<string>;
+  public readonly jobAttempts: Counter<string>;
 
   constructor(options: BullMQMetricsOptions = {}, customRegistry?: Registry) {
     this.registry = customRegistry || new Registry();
@@ -25,6 +26,10 @@ export class MetricsRegistry {
     const labelNames = ['queue_name'];
     if (options.includeJobName) {
       labelNames.push('job_name');
+    }
+
+    if (options.customLabels) {
+      labelNames.push(...options.customLabels);
     }
 
     this.queueDepth = new Gauge({
@@ -46,7 +51,7 @@ export class MetricsRegistry {
       help: 'Execution time per job',
       labelNames: [...labelNames],
       registers: [this.registry],
-      buckets: [0.01, 0.05, 0.1, 0.5, 1, 2, 5, 10],
+      buckets: options.durationBuckets || [0.01, 0.05, 0.1, 0.5, 1, 2, 5, 10],
     });
 
     this.jobWaitDuration = new Histogram({
@@ -54,7 +59,7 @@ export class MetricsRegistry {
       help: 'Time jobs spent waiting before being picked up by a worker',
       labelNames: [...labelNames],
       registers: [this.registry],
-      buckets: [0.1, 0.5, 1, 2, 5, 10, 30, 60],
+      buckets: options.waitDurationBuckets || [0.1, 0.5, 1, 2, 5, 10, 30, 60],
     });
 
     this.workersActive = new Gauge({
@@ -68,6 +73,13 @@ export class MetricsRegistry {
       name: `${this.prefix}bullmq_queue_paused`,
       help: 'Whether the queue is currently paused (1 for paused, 0 for active)',
       labelNames: ['queue_name'],
+      registers: [this.registry],
+    });
+
+    this.jobAttempts = new Counter({
+      name: `${this.prefix}bullmq_job_attempts_total`,
+      help: 'Total number of attempts made for jobs',
+      labelNames: [...labelNames, 'status'],
       registers: [this.registry],
     });
   }
